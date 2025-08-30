@@ -6,7 +6,6 @@ library(popbio)  # package for matrix population models
 library(nloptr)  # package for nonlinear constrained optimization (eg. for finding maxent probability distributions)
 library(Rsolnp)  
 
-
 # Load functions ---------
 
 # s is stage specific survival, l is lambda, T is focal stage duration
@@ -72,51 +71,57 @@ negent = function(p){
 }
 
 ### Closure for generating equality constraint function- assume equality constraints are zeros a.la lagrange multiplier method
-generate_constraint_function = function(ages,meanage){
-  f <- list()
-  f$eq_func = function(p){
-    z1 = sum(p)-1       # distribution must sum to 1
-    z2 = sum(p*ages) - meanage   # mean must match the user-supplied value
-    c(z1,z2)
+  # ages are the possible ages for this stage, 
+  # mean is the point estimate for maturation, 
+  # sd is the standard deviation from the mean,
+  # skew is the skewness (third central moment, standardized by dividing by sigma cubed)
+generate_eq = function(ages, mage){
+  sig=(max(ages)-min(ages))/4
+  function(p){
+    z1 = sum(p)-1       # constraint 1: sum to 1
+    thismean = sum(p*ages)
+    z2 = thismean - mage   # constraint 2: match user defined mean
+    this2cm = sum((ages-mage)^2 * p)
+    z3 = this2cm-sig^2  # constraint 3: match user defined second central moment
+    c(z1,z2,z3)  # z4
   }
-  f$eq_vals = c(0,0)
-  max_ndx = which.min(abs(ages-meanage))
-  f$ineq_func = function(p){
-    p[max_ndx]-p[-max_ndx]
-  }
-  f$ineq_vals <- list()
-  f$ineq_vals$lower <- 
-  
 }
-ages=1:10;meanage=5.0
-eq = generate_eq(ages,meanage)
+# ages=1:10;mage=5.5    #;skew=0
 
-# test function
-p0 = rep(1,length(ages))/length(ages)
-bounds = cbind(rep(0,length(ages)),rep(1,length(ages)))
+ineq = function(p){
+  diff(diff(log(p)))
+}
 
-s = solnp(pars=p0, fun = negent, eqfun = eq, eqB = c(0,0),LB=bounds[,1],UB=bounds[,2])  # 
-sum(s$pars)
-s$pars
-plot(s$pars)
 
-### Work in progress!
+
+
+# sum(s$pars)
+# s$pars
+# plot(s$pars)
+# sum(ages*s$pars)
+# sqrt(sum((ages-m)^2*s$pars))
+# sum((ages-m)^3*s$pars)/(sig^3)
+
+
 ### Function for allocating age at maturity in variable-maturity age-structured model 
-meanam=10;minam=5;maxam=16
+meanam=9;minam=5;maxam=12
 age_at_mat <- function(meanam, minam, maxam){
   aam <- minam:maxam
-  obj = function(par) { 
-    c1 = (sum(aam*dnorm(aam,par[1],par[2]))-meanam)^2 
-    c2 = ( sqrt(sum(aam^2*dnorm(aam,par[1],par[2])) - sum(aam*dnorm(aam,par[1],par[2]))^2) - 0.25*diff(range(aam)) )^2
-    (c1+c2)
-  }
-  optpars <- suppressWarnings( optim(obj,par=c(meanam,0.25*diff(range(aam))),method="BFGS") )
+  p0 = dnorm(aam,meanam,(maxam-minam)/4) ; p0= p0/sum(p0)
+  bounds = cbind(rep(1e-9,length(aam)),rep(1-1e-9,length(aam)))
+  eq = generate_eq(aam,meanam)
+  sink("new");
+  s = solnp(pars=p0, fun = negent, 
+            eqfun = eq, eqB = c(0,0,0),
+            ineqfun = ineq, ineqLB = rep(-1e9,length(aam)-2), ineqUB=rep(0,length(aam)-2),
+            LB=bounds[,1],UB=bounds[,2])   # 
+  sink()
   data.frame(
     ages=aam,
-    prob=dnorm(aam, optpars$par[1],optpars$par[2])/sum(dnorm(aam, optpars$par[1],optpars$par[2]))
+    prob=s$pars
   )
 }
-age_at_mat(9,5,12)
+# plot(age_at_mat(9,5,12))
 
 
 # Generate scenarios -------
