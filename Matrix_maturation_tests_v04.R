@@ -163,7 +163,7 @@ do_unroll <- function(s,f,t){
   if(ncol(t)>1){
      td = lapply(1:nrow(t),function(z) age_at_mat(t[z,1],t[z,2],t[z,3] )   ) 
      for(r in 1:nrow(t)){
-       pr1 = numeric(t[r,3]);pr2=pr  # probability of moving on to the next stage
+       pr1 = numeric(t[r,3]);pr2=pr1  # probability of moving on to the next stage
        pr1[td[[r]]$ages ] <- td[[r]]$prob
            # hard coded to go right to adult (assuming only 1 juvenile stage for now)
        for(a in 2:(na-1)) pr2[a] = pr1[a]/(1-sum(pr1[1:(a-1)]) )     # prob of transitioning conditional on not having previously transitioned
@@ -244,6 +244,7 @@ mat <- do_aas(scen3$surv,scen3$fec,scen3$dur)   # aas- gives warning message
 mat
 lambda(mat) 
 
+s=scen3$surv;f=scen3$fec; t=scen3$dur
 mat <- do_unroll(scen3$surv,scen3$fec,scen3$dur)   # very minor difference from fixed duration!!
 mat
 lambda(mat) 
