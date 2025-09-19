@@ -191,21 +191,6 @@ scen3 <- gen_scen(surv=c(0.75,0.96),fec=0.5,dur=data.frame(dur=9,min=6,max=13)) 
 
 
 scen4 <- gen_scen(surv=c(0.25,0.8),fec=1.29,dur=2)
-mat = do_aas(scen4$surv,scen4$fec,scen4$dur)
-lambda(mat)
-mat = do_fas(scen4$surv,scen4$fec,scen4$dur)
-lambda(mat)
-
-
-scen4 <- gen_scen(surv=c(0.8,0.8),fec=1.29,dur=2)
-mat = do_aas(scen4$surv,scen4$fec,scen4$dur)
-lambda(mat)
-mat = do_fas(scen4$surv,scen4$fec,scen4$dur)
-lambda(mat)
-
-
-
-
 
 # Run tests --------
 
