@@ -145,10 +145,10 @@ df2 <- df2 %>%
 library(ggplot2) #recommended on stack exchange for big dataframes
 
 #Subplots for df1 plots
-sub1 = df1 %>% filter(fec==fec[3]&adsurvs==adsurvs[8])
-ggplot(sub1, aes(x = TT, y = lambda_diff)) +
-  geom_point(aes(colour = jvsurvs))+
-labs(title = "Difference in λ vs Time to Maturation (T)", x = "TT", y = "λ_diff")
+#sub1 = df1 %>% filter(fec==fec[3]&adsurvs==adsurvs[8])
+#ggplot(sub1, aes(x = TT, y = lambda_diff)) +
+  #geom_point(aes(colour = jvsurvs))+
+#labs(title = "Difference in λ vs Time to Maturation (T)", x = "TT", y = "λ_diff")
 
 sub2 = df1 %>% filter(TT==2&adsurvs==adsurvs[8])
 ggplot(sub2, aes(x = fec, y = lambda_diff)) +
@@ -160,15 +160,15 @@ ggplot(sub3, aes(x = jvsurvs, y = lambda_diff)) +
   geom_point(aes(colour = TT))
   labs(title = "Difference in λ vs Time to Maturation (T)", x = "Survival", y = "λ_diff")
 
-sub4 = df1 %>% filter(jvsurvs==jvsurvs[6]&adsurvs==adsurvs[12])
-ggplot(sub4, aes(x = TT, y = lambda_diff)) +
-  geom_point(aes(colour = fec))
-  labs(title = "Difference in λ vs Time to Maturation (T)", x = "Survival", y = "λ_diff")
+#sub4 = df1 %>% filter(jvsurvs==jvsurvs[6]&adsurvs==adsurvs[12])
+#ggplot(sub4, aes(x = TT, y = lambda_diff)) +
+  #geom_point(aes(colour = fec))
+  #labs(title = "Difference in λ vs Time to Maturation (T)", x = "Survival", y = "λ_diff")
   
-sub5 = df1 %>% filter(TT==2&adsurvs==adsurvs[8])
-ggplot(sub5, aes(x = jvsurvs, y = lambda_diff)) +
-  geom_point(aes(colour = fec))
-  labs(title = "Difference in λ vs Time to Maturation (T)", x = "Survival", y = "λ_diff")
+#sub5 = df1 %>% filter(TT==2&adsurvs==adsurvs[8])
+#ggplot(sub5, aes(x = jvsurvs, y = lambda_diff)) +
+  #geom_point(aes(colour = fec))
+  #labs(title = "Difference in λ vs Time to Maturation (T)", x = "Survival", y = "λ_diff")
   
 sub6 = df1 %>% filter(jvsurvs==0.1&adsurvs==adsurvs[8])
 ggplot(sub6, aes(x = fec, y = lambda_diff)) +
@@ -180,8 +180,8 @@ subh1 = df1 %>% filter(TT==2&adsurvs==adsurvs[8])
 ggplot(subh1, aes(x = fec, y = jvsurvs, fill = lambda_diff)) +
   geom_tile() +
   scale_fill_gradient2(
-    low = "blue", mid = "white", high = "red", 
-    midpoint = 0, 
+    low = "blue", mid = "yellow", high = "red", 
+    midpoint = 0.3, 
     name = expression(lambda[diff])
   ) +
   labs(
@@ -195,8 +195,8 @@ subh2 = df1 %>% filter(fec==fecs[3]&adsurvs==adsurvs[8])
 ggplot(subh2, aes(x = TT, y = jvsurvs, fill = lambda_diff)) +
   geom_tile() +
   scale_fill_gradient2(
-    low = "blue", mid = "white", high = "red", 
-    midpoint = 0, 
+    low = "blue", mid = "yellow", high = "red", 
+    midpoint = 0.3, 
     name = expression(lambda[diff])
   ) +
   labs(
@@ -210,8 +210,8 @@ subh3 = df1 %>% filter(jvsurvs==0.1&adsurvs==adsurvs[8])
 ggplot(subh3, aes(x = TT, y = fec, fill = lambda_diff)) +
   geom_tile() +
   scale_fill_gradient2(
-    low = "blue", mid = "white", high = "red", 
-    midpoint = 0, 
+    low = "blue", mid = "yellow", high = "red", 
+    midpoint = 0.15, 
     name = expression(lambda[diff])
   ) +
   labs(
