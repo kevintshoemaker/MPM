@@ -11,6 +11,7 @@
 library(popbio)  # package for matrix population models
 # library(nloptr)  
 library(Rsolnp)   # package for nonlinear constrained optimization (eg. for finding maxent probability distributions)
+library(memoise)
 
 # Load functions ---------
 
