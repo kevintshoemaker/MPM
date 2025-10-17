@@ -11,6 +11,7 @@
 library(popbio)  # package for matrix population models
 # library(nloptr)  
 library(Rsolnp)   # package for nonlinear constrained optimization (eg. for finding maxent probability distributions)
+library(memoise)
 
 # Load functions ---------
 
@@ -134,21 +135,22 @@ ineq = function(p){
 ### Function for allocating age at maturity in variable-maturity age-structured model 
 meanam=9;minam=5;maxam=12
 age_at_mat <- function(meanam, minam, maxam){
-  aam <- minam:maxam
+  aam <- floor(minam):ceiling(maxam)
   p0 = dnorm(aam,meanam,(maxam-minam)/4) ; p0= p0/sum(p0)
   bounds = cbind(rep(1e-9,length(aam)),rep(1-1e-9,length(aam)))
   eq = generate_eq(aam,meanam)
-  sink("new");
   s = solnp(pars=p0, fun = negent, 
             eqfun = eq, eqB = c(0,0,0),
             ineqfun = ineq, ineqLB = rep(-1e9,length(aam)-2), ineqUB=rep(0,length(aam)-2),
-            LB=bounds[,1],UB=bounds[,2])   # 
-  sink()
+            LB=bounds[,1],UB=bounds[,2], control = list(trace=0))   # 
   data.frame(
     ages=aam,
     prob=s$pars
   )
 }
+
+age_at_mat = memoize(age_at_mat)
+
 # plot(age_at_mat(9,5,12))
 
 ## Function for "UNROLL" method  ------------------
@@ -163,7 +165,7 @@ do_unroll <- function(s,f,t){
   if(ncol(t)>1){
      td = lapply(1:nrow(t),function(z) age_at_mat(t[z,1],t[z,2],t[z,3] )   ) 
      for(r in 1:nrow(t)){
-       pr1 = numeric(t[r,3]);pr2=pr  # probability of moving on to the next stage
+       pr1 = numeric(t[r,3]);pr2=pr1  # probability of moving on to the next stage
        pr1[td[[r]]$ages ] <- td[[r]]$prob
            # hard coded to go right to adult (assuming only 1 juvenile stage for now)
        for(a in 2:(na-1)) pr2[a] = pr1[a]/(1-sum(pr1[1:(a-1)]) )     # prob of transitioning conditional on not having previously transitioned
@@ -191,21 +193,6 @@ scen3 <- gen_scen(surv=c(0.75,0.96),fec=0.5,dur=data.frame(dur=9,min=6,max=13)) 
 
 
 scen4 <- gen_scen(surv=c(0.25,0.8),fec=1.29,dur=2)
-mat = do_aas(scen4$surv,scen4$fec,scen4$dur)
-lambda(mat)
-mat = do_fas(scen4$surv,scen4$fec,scen4$dur)
-lambda(mat)
-
-
-scen4 <- gen_scen(surv=c(0.8,0.8),fec=1.29,dur=2)
-mat = do_aas(scen4$surv,scen4$fec,scen4$dur)
-lambda(mat)
-mat = do_fas(scen4$surv,scen4$fec,scen4$dur)
-lambda(mat)
-
-
-
-
 
 # Run tests --------
 
@@ -244,6 +231,7 @@ mat <- do_aas(scen3$surv,scen3$fec,scen3$dur)   # aas- gives warning message
 mat
 lambda(mat) 
 
+s=scen3$surv;f=scen3$fec; t=scen3$dur
 mat <- do_unroll(scen3$surv,scen3$fec,scen3$dur)   # very minor difference from fixed duration!!
 mat
 lambda(mat) 

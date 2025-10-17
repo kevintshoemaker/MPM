@@ -135,21 +135,22 @@ ineq = function(p){
 ### Function for allocating age at maturity in variable-maturity age-structured model 
 meanam=9;minam=5;maxam=12
 age_at_mat <- function(meanam, minam, maxam){
-  aam <- minam:maxam
+  aam <- floor(minam):ceiling(maxam)
   p0 = dnorm(aam,meanam,(maxam-minam)/4) ; p0= p0/sum(p0)
   bounds = cbind(rep(1e-9,length(aam)),rep(1-1e-9,length(aam)))
   eq = generate_eq(aam,meanam)
-  sink("new");
   s = solnp(pars=p0, fun = negent, 
             eqfun = eq, eqB = c(0,0,0),
             ineqfun = ineq, ineqLB = rep(-1e9,length(aam)-2), ineqUB=rep(0,length(aam)-2),
-            LB=bounds[,1],UB=bounds[,2])   # 
-  sink()
+            LB=bounds[,1],UB=bounds[,2], control = list(trace=0))   # 
   data.frame(
     ages=aam,
     prob=s$pars
   )
 }
+
+age_at_mat = memoize(age_at_mat)
+
 # plot(age_at_mat(9,5,12))
 
 ## Function for "UNROLL" method  ------------------
