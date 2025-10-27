@@ -1,9 +1,9 @@
 {
     "id": "6FA39997",
-    "path": "~/GitHub/MPM/Matrix_maturation_tests_v05.R",
-    "project_path": "Matrix_maturation_tests_v05.R",
+    "path": "~/GitHub/MPM/Matrix_maturation_tests_v06.R",
+    "project_path": "Matrix_maturation_tests_v06.R",
     "type": "r_source",
-    "hash": "3766523499",
+    "hash": "0",
     "contents": "",
     "dirty": false,
     "created": 1759961255082.0,
@@ -12,15 +12,15 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "136,10",
-        "scrollLine": "122"
+        "cursorPosition": "162,18",
+        "scrollLine": "157"
     },
     "folds": "",
-    "lastKnownWriteTime": 1760212437,
+    "lastKnownWriteTime": 1761523628,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1760212437680,
+    "last_content_update": 1761523628818,
     "read_only": false,
     "read_only_alternatives": []
 }

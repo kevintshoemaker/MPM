@@ -1,10 +1,9 @@
 
-# TODO ---------
+# NOTES ---------
 
-# add more checks and warning messages
-# allow for multiple reproductive stages
+# v6 implements "unroll" with a ramp in juvenile survival up to adulthood
+#   to do this, we need separate repro and nonrepro stages for ages affected by variable maturity
 
-# start to think about how to implement other effects- continuous effects of age/size on survival and reproduction. Environmental drivers, etc. 
 
 # Load packages -----------
 
@@ -160,9 +159,10 @@ age_at_mat = memoize(age_at_mat)
 
 do_unroll <- function(s,f,t){
   init_input_check(s,f,t)
-  na = sum(t[[ncol(t)]])+1; ns = nrow(t)   # na is number of age classes, ns is number of juv stage classes
-  m0 <- matrix(0,na,na) ;  m0[1,na] <- f;  m0[na,na] <- s[ns+1]    # construct init matrix
-  if(ncol(t)>1){
+  if(ncol(t)>1){   # hard coded for only one row in this case- that is, only 1 juvenile stage
+    na = sum(t[[3]]) + t[[3]]-t[[2]] + 1 
+    ns = nrow(t)   # na is number of age classes, ns is number of juv stage classes
+    m0 <- matrix(0,na,na) ;  m0[1,na] <- f;  m0[na,na] <- s[ns+1]    # construct init matrix
      td = lapply(1:nrow(t),function(z) age_at_mat(t[z,1],t[z,2],t[z,3] )   ) 
      for(r in 1:nrow(t)){
        pr1 = numeric(t[r,3]);pr2=pr1  # probability of moving on to the next stage
@@ -176,6 +176,8 @@ do_unroll <- function(s,f,t){
        m0[2:na,1:(na-1)] = m1
      }
   }else{
+    na = sum(t) + 1; ns = nrow(t)   # na is number of age classes, ns is number of juv stage classes
+    m0 <- matrix(0,na,na) ;  m0[1,na] <- f;  m0[na,na] <- s[ns+1]    # construct init matrix
     m1 <- diag(rep(s[1:ns],t[[1]]))
     m0[2:na,1:(na-1)] = m1
   }
