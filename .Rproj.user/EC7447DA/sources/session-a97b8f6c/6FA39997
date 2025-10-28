@@ -3,7 +3,7 @@
     "path": "~/GitHub/MPM/Matrix_maturation_tests_v06.R",
     "project_path": "Matrix_maturation_tests_v06.R",
     "type": "r_source",
-    "hash": "0",
+    "hash": "2602783346",
     "contents": "",
     "dirty": false,
     "created": 1759961255082.0,
@@ -12,15 +12,15 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "162,18",
-        "scrollLine": "157"
+        "cursorPosition": "265,6",
+        "scrollLine": "258"
     },
     "folds": "",
-    "lastKnownWriteTime": 1761523628,
+    "lastKnownWriteTime": 1761677520,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1761523628818,
+    "last_content_update": 1761677520818,
     "read_only": false,
     "read_only_alternatives": []
 }
