@@ -196,31 +196,42 @@ ramp_fun = function(sm,sa,sz,y){
 do_unroll <- function(js,as,f,t){
   init_input_check(js,as,f,t)
   na = sum(t[[ncol(t)]])+1; ns = nrow(t)   # na is number of age classes, ns is number of juv stage classes
+  m0 <- matrix(0,na,na) ;  m0[1,na] <- f;  m0[na,na] <- as    # construct init matrix
   stnames = paste0("st_", 1:(ns+1))
   adstage = stnames[ns+1]
+  agedf = data.frame(    # make data frame to do preliminary computations
+    age = 1:(na-1)
+  )
+  agedf[stnames] <- lapply(1:(ns+1), function(x) 0)
+  agedf$surv = NA; agedf$f = NA; agedf$st_1=0; agedf$st_1[1] = 1 
   
-  if(ncol(t)>1){
-    na = sum(t[[3]]) + 1; ns = nrow(t)   # na is number of age classes, ns is number of juv stage classes
-    if(ncol(js)>1){
+  if(ncol(t)>1){   # if variable stage durations
+    survmat=NULL   # set up survival by age matrix (for weighted average of survival across stages)
+    if(ncol(js)>1){  # is there a ramp?
+      sss=1; ss = c(js$mean,as); startage=1
+      for(sss in 1:(ns)){
+        thisramp = ramp_fun(js$mean[sss],js$min[sss],ss[sss+1],t$dur[sss]+1)
+        thisages = startage:(startage+t$dur[sss])
+        thissurv = numeric(na-1)     # Should survival ramp be pegged to duration of stage?? Right now it is not 
+        thissurv[thisages] = thisramp
+        thissurv[1:startage] = thisramp[1]
+        thissurv[(startage + length(thisramp)):(na-1)] = thisramp[length(thisramp)]
+        survmat = cbind(survmat,thissurv)
+      }
+      survmat = cbind(survmat, rep(as,na-1))
+      colnames(survmat)=stnames    # keep as matrix?
       
     }else{
-      survdf=NULL
-      for(ss in 1:(ns)){
-        survdf = cbind(survdf,rep(js[[1]][ss],na-1))
-      }
-      survdf = cbind(survdf, rep(as,na-1))
-      colnames(survdf)=stnames    # keep as matrix?
-      # survdf=as.data.frame(survdf)
-    }
       
-    m0 <- matrix(0,na,na) ;  m0[1,na] <- f;  m0[na,na] <- as    # construct init matrix
+      for(sss in 1:(ns)){
+        survmat = cbind(survmat,rep(js[[1]][sss],na-1))
+      }
+      survmat = cbind(survmat, rep(as,na-1))
+      colnames(survmat)=stnames    # keep as matrix?
+    }
+  
     td = lapply(1:nrow(t),function(z) vari_dur(t[z,1],t[z,2],t[z,3] )   )  # variable ages at transition
-    
-    agedf = data.frame(    # make data frame to do preliminary computations
-      age = 1:(na-1)
-    )
-    agedf[stnames] <- lapply(1:(ns+1), function(x) 0)
-    agedf$surv = NA; agedf$f = NA; agedf$st_1=0; agedf$st_1[1] = 1 
+
     j=1
     for(j in 1:ns){   # determine probability densities of transitioning at each age given variable durations
       thisst = j ; nextst = j+1
@@ -253,40 +264,27 @@ do_unroll <- function(js,as,f,t){
     }
     rowSums(stprob)   # make sure rows sum to 1
     
-    agedf$surv = rowSums( survdf*stprob )   # survival by age
+    agedf$surv = rowSums( survmat*stprob )   # survival by age
     agedf$f = stprob[,adstage] * f
     
-    # for matrix, transition rates must be conditional on already being in the stage...
-      # assume that all individuals must pass through all stages. 
-    
-    # put matrix together
-  
-    m1 <- diag(agedf$surv)
-    m0[2:na,1:(na-1)] = m1
-    m0[1,1:(na-1)] = agedf$f
-    
-    # agedf[[thiscol]][match(thistd$dur,agedf$age)] = pmax(0,pmin(1,1-cumsum(thistd$prob)) )
-    # agedf[[thiscol]][max(thistd$dur):(na-1)] = 0; agedf[[nextcol]][max(thistd$dur):(na-1)] = 1
-    
-    
-    # next: loop through all the stages and mix together all the ages .
-    # compute the prob of survival as a weighted average
-    # compute fecundity as a weighted average 
-    
-    for(r in 1:nrow(t)){
-      m1 <- diag(ss[r]*(1-pr2))
-      m1[na-1,] <- s[r]*pr2
-      m0[2:na,1:(na-1)] = m1
-    }
-  }else{
+  }else{    # if non-variable stage durations
     if(ncol(js)>1){   # if ramp and no variable aam
-      
+      prev=ns+1; z=1; ndx = nrow(agedf); ss = c(js$mean,as); thismax = ss[prev]
+      for(z in 1:ns){
+        thisdur = t[[1]][prev-1]; 
+        thisramp = ramp_fun(js$mean[prev-1],js$min[prev-1],thismax,thisdur+1)
+        agedf$surv[(ndx-length(thisramp)+2):ndx] = thisramp[-length(thisramp)]
+        prev=prev-1; thismax=min(thisramp); ndx=ndx-length(thisramp)+1
+        # plot(agedf[,c("age","surv")])
+      }
     }else{    # if no ramp and no variable aam
-      m0 <- matrix(0,na,na) ;  m0[1,na] <- f;  m0[na,na] <- as    # construct init matrix
-      m1 <- diag(rep(js,t[[1]]))
-      m0[2:na,1:(na-1)] = m1
+      agedf$surv = rep(js[[1]],t[[1]])
     }
+    agedf$f = 0   # for now assume only adult stage is reproductive
   }
+  m1 <- diag(agedf$surv)
+  m0[2:na,1:(na-1)] = m1
+  m0[1,1:(na-1)] = agedf$f
   m0
 }
 
@@ -301,9 +299,13 @@ scen3 <- gen_scen(jsurv=c(0.75),asurv=0.96,fec=0.5,dur=data.frame(dur=9,min=6,ma
 
 scen4 <- gen_scen(jsurv=c(0.6,0.8),asurv=0.96,fec=0.5,dur=data.frame(dur=c(4,3),min=c(2,2),max=c(5,5)))   # variable stage duration
 
-scen5 <- gen_scen(jsurv=data.frame(mean=0.75,min=0.5),asurv=0.95, fec=1.29, dur=data.frame(dur=9,min=6,max=13))
+scen5 <- gen_scen(jsurv=data.frame(mean=0.75,min=0.5),asurv=0.95, fec=1.29, dur=9)
 
-scen6 <- gen_scen(jsurv=data.frame(mean=c(0.6,0.8),min=c(0.3,0.6)),asurv=0.95, fec=1.29, dur=data.frame(dur=c(3,5),min=c(1,3),max=c(3,8) ))
+scen6 <- gen_scen(jsurv=data.frame(mean=c(0.5,0.8),min=c(0.25,0.65)),asurv=0.95, fec=1.29, dur=c(3,4))
+
+scen7 <- gen_scen(jsurv=data.frame(mean=0.75,min=0.5),asurv=0.95, fec=1.29, dur=data.frame(dur=9,min=6,max=13))
+
+scen8 <- gen_scen(jsurv=data.frame(mean=c(0.6,0.8),min=c(0.3,0.6)),asurv=0.95, fec=1.29, dur=data.frame(dur=c(3,5),min=c(1,3),max=c(3,8) ))
 
 # Run tests --------
 
@@ -346,7 +348,7 @@ mat
 lambda(mat) 
 
 js=scen3$jsurv;as=scen3$asurv;f=scen3$fec;t=scen3$dur
-mat <- do_unroll(scen3$surv,scen3$fec,scen3$dur)   # very minor difference from fixed duration!!
+mat <- do_unroll(scen3$jsurv,scen3$asurv,scen3$fec,scen3$dur)   # very minor difference from fixed duration!!
 mat
 lambda(mat) 
 
@@ -354,9 +356,40 @@ lambda(mat)
 ## multiple variable juvenile stages -----
 
 js=scen4$jsurv;as=scen4$asurv;f=scen4$fec;t=scen4$dur
-mat <- do_unroll(scen3$surv,scen3$fec,scen3$dur)   # very minor difference from fixed duration!!
+mat <- do_unroll(scen5$jsurv,scen5$asurv,scen5$fec,scen5$dur)   # very minor difference from fixed duration!!
 mat
 lambda(mat) 
+
+
+## ramp with fixed stage duration- one stage -----
+
+js=scen5$jsurv;as=scen5$asurv;f=scen5$fec;t=scen5$dur
+mat <- do_unroll(scen2$jsurv,scen2$asurv,scen2$fec,scen2$dur)  
+mat
+lambda(mat) 
+
+
+## ramp with fixed stage duration- two stage -----
+
+js=scen6$jsurv;as=scen6$asurv;f=scen6$fec;t=scen6$dur
+mat <- do_unroll(scen6$jsurv,scen6$asurv,scen6$fec,scen6$dur)   
+mat
+lambda(mat) 
+
+## ramp with variable stage duration- one stage -----
+
+js=scen7$jsurv; as=scen7$asurv; f=scen7$fec; t=scen7$dur
+mat <- do_unroll(scen6$jsurv,scen6$asurv,scen6$fec,scen6$dur)   
+mat
+lambda(mat) 
+
+## ramp with variable stage duration- two stage -----
+
+js=scen8$jsurv; as=scen8$asurv; f=scen8$fec; t=scen8$dur
+mat <- do_unroll(scen8$jsurv,scen8$asurv,scen8$fec,scen8$dur)   
+mat
+lambda(mat) 
+
 
 # CHECK AND DEBUG ------------------
 
