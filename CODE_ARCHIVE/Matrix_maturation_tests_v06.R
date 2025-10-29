@@ -1,62 +1,42 @@
 
 # NOTES ---------
 
-# v0_1 implements "do_unroll" with a ramp in juvenile survival up to adulthood
-    # the 'ramp' is implemented as a maximum entropy distribution that monotonically increases or decreases from a fixed minimum to a fixed maximum with a fixed mean survival during that duration
-    #    to implement the ramp, you must assign each stage a mean and a minimum survival value. The duration of the stage is set in the stage duration argument, and the maximum is fixed to be the minimum survival in the subsequent stage (to ensure continuity in survival across stages). 
-# tested for up to 2 stages with variable stage duration
-# still assumes only one reproductive stage (adult) but this could be relaxed in the future
-# assumes pre-breeding census model. Therefore "fecundity" terms must always include survival of newborns to age 1. 
-    # we may implement post-breeding census model but I am reluctant because it will inevitably add confusion!
-    #  however, I think if we can design a way to input parameters that is clear, then we can potentially include an argument for constructing pre vs post breeding census matrices
+# v6 implements "unroll" with a ramp in juvenile survival up to adulthood
+#   tested for up to 2 stages with variable stage duration
+#   still assumes only one reproductive stage (adult) but this could be relaxed in the future
 
-rm(list=ls())
 
 # Load packages -----------
 
 library(popbio)  # package for matrix population models
+# library(nloptr)  
 library(Rsolnp)   # package for nonlinear constrained optimization (eg. for finding maxent probability distributions)
 library(memoise)
 
 # Load functions ---------
 
-source("MPM_Functions_v0_1.R")
-
 # Generate scenarios -------
-
-# the gen_scen() function is not necessary but helps package the data for the "do_MPM" functions (eg. "do_unroll"). 
-
-## fixed stage duration, fixed survival per stage --------
 
 # jsurv=0.75; asurv=0.96; fec=0.5; dur=9
 scen1 <- gen_scen(jsurv=0.75, asurv=0.96, fec=0.5, dur=9)
 
 scen2 <- gen_scen(jsurv=c(0.75,0.96),asurv=0.96,fec=0.5,dur=c(6,3))
 
-## variable stage duration, fixed survival per stage --------
-
 scen3 <- gen_scen(jsurv=c(0.75),asurv=0.96,fec=0.5,dur=data.frame(dur=9,min=6,max=13))   # variable stage duration
 
 scen4 <- gen_scen(jsurv=c(0.6,0.8),asurv=0.96,fec=0.5,dur=data.frame(dur=c(4,3),min=c(2,2),max=c(5,5)))   # variable stage duration
 
-## survival ramp, fixed stage duration -------
-
-   # NOTE: this may be analogous to the GT scenarios we want to run (with fixed stage duration)
 scen5 <- gen_scen(jsurv=data.frame(mean=0.75,min=0.5),asurv=0.95, fec=1.29, dur=9)
 
-   # NOTE: this may be analogous to the GT scenarios we want to run
 scen6 <- gen_scen(jsurv=data.frame(mean=c(0.5,0.8),min=c(0.25,0.65)),asurv=0.95, fec=1.29, dur=c(3,4))
-
-
-## survival ramp, variable stage duration --------
 
 scen7 <- gen_scen(jsurv=data.frame(mean=0.75,min=0.5),asurv=0.95, fec=1.29, dur=data.frame(dur=9,min=6,max=13))
 
 scen8 <- gen_scen(jsurv=data.frame(mean=c(0.6,0.8),min=c(0.3,0.6)),asurv=0.95, fec=1.29, dur=data.frame(dur=c(3,5),min=c(1,3),max=c(3,8) ))
 
-# Run MPM tests --------
+# Run tests --------
 
-## Scen 1: single juvenile stage, fixed duration  ------------
+## Single juvenile stage  ------------
 
 # js=scen1$jsurv;as=scen1$asurv;f=scen1$fec;t=scen1$dur
 mat <- do_aas(js=scen1$jsurv,as=scen1$asurv,f=scen1$fec,t=scen1$dur)    # AAS
@@ -85,36 +65,33 @@ lambda(mat)       # gives the same result as AAS- as it should!
 
 mat <- do_fas(scen2$jsurv,scen2$asurv,scen2$fec,scen2$dur)  # FAS
 mat
-lambda(mat)  # still higher- but not quite as wrong  
+lambda(mat)  # still higher, but not as wrong  
 
 
-## variable juvenile stage duration, single stage ---------
-
-# scen3
-# js=scen3$jsurv; as=scen3$asurv; f=scen3$fec; t=scen3$dur
-mat <- do_aas(scen3$jsurv,scen3$asurv,scen3$fec,scen3$dur)   # aas- gives warning message (assumes fixed duration)
+## variable juvenile stage duration ---------
+js=scen3$jsurv; as=scen3$asurv; f=scen3$fec; t=scen3$dur
+mat <- do_aas(scen4$jsurv,scen4$asurv,scen4$fec,scen4$dur)   # aas- gives warning message
 mat
 lambda(mat) 
 
-mat <- do_unroll(scen3$jsurv,scen3$asurv,scen3$fec,scen3$dur)   # very minor difference from fixed duration
+js=scen3$jsurv;as=scen3$asurv;f=scen3$fec;t=scen3$dur
+mat <- do_unroll(scen3$jsurv,scen3$asurv,scen3$fec,scen3$dur)   # very minor difference from fixed duration!!
 mat
 lambda(mat) 
 
 
 ## multiple variable juvenile stages -----
 
-# scen4
-# js=scen4$jsurv;as=scen4$asurv;f=scen4$fec;t=scen4$dur
-mat <- do_unroll(scen4$jsurv,scen4$asurv,scen4$fec,scen4$dur)   
+js=scen4$jsurv;as=scen4$asurv;f=scen4$fec;t=scen4$dur
+mat <- do_unroll(scen5$jsurv,scen5$asurv,scen5$fec,scen5$dur)   # very minor difference from fixed duration!!
 mat
 lambda(mat) 
 
 
 ## ramp with fixed stage duration- one stage -----
 
-# scen5
-# js=scen5$jsurv;as=scen5$asurv;f=scen5$fec;t=scen5$dur
-mat <- do_unroll(scen5$jsurv,scen5$asurv,scen5$fec,scen5$dur)  
+js=scen5$jsurv;as=scen5$asurv;f=scen5$fec;t=scen5$dur
+mat <- do_unroll(scen2$jsurv,scen2$asurv,scen2$fec,scen2$dur)  
 mat
 lambda(mat) 
 
@@ -139,13 +116,6 @@ js=scen8$jsurv; as=scen8$asurv; f=scen8$fec; t=scen8$dur
 mat <- do_unroll(scen8$jsurv,scen8$asurv,scen8$fec,scen8$dur)   
 mat
 lambda(mat) 
-
-
-# END SCRIPT -------
-
-
-
-
 
 
 # CHECK AND DEBUG ------------------
