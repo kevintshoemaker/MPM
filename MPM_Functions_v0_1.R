@@ -1,6 +1,11 @@
 
 # FUNCTIONS for matrix population modeling in R ----------
 
+# Load packages -----------
+
+library(popbio)  # package for matrix population models
+library(Rsolnp)   # package for nonlinear constrained optimization (eg. for finding maxent probability distributions)
+library(memoise)
 
 ## Initial error checking function ------------
 
@@ -169,7 +174,7 @@ ramp_fun = function(sm,sa,sz,y){
   sa + (sz-sa) * ( (1-exp(-thisk * ( 1:y - 1 ) ) ) / (1 - exp(-thisk * (y - 1) ) ) )
 } 
 
-# plot(1:10,ramp_fun(0.8,0.5,0.96,10),type="l")
+# plot(1:10,ramp_fun(0.8,0.5,0.9,10),type="l")
 
 
 # plot(age_at_mat(9,5,12))
