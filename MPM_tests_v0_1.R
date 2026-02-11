@@ -3,12 +3,12 @@
 
 # v0_1 implements "do_unroll" with a ramp in juvenile survival up to adulthood
     # the 'ramp' is implemented as a maximum entropy distribution that monotonically increases or decreases from a fixed minimum to a fixed maximum with a fixed mean survival during that duration
-    #    to implement the ramp, you must assign each stage a mean and a minimum survival value. The duration of the stage is set in the stage duration argument, and the maximum is fixed to be the minimum survival in the subsequent stage (to ensure continuity in survival across stages). 
+    # to implement the ramp, you must assign each stage a mean and a minimum survival value. The duration of the stage is set in the stage duration argument, and the maximum is fixed to be the minimum survival in the subsequent stage (to ensure continuity in survival across stages). 
 # tested for up to 2 stages with variable stage duration
 # still assumes only one reproductive stage (adult) but this could be relaxed in the future
 # assumes pre-breeding census model. Therefore "fecundity" terms must always include survival of newborns to age 1. 
     # we may implement post-breeding census model but I am reluctant because it will inevitably add confusion!
-    #  however, I think if we can design a way to input parameters that is clear, then we can potentially include an argument for constructing pre vs post breeding census matrices
+    # however, I think if we can design a way to input parameters that is clear in either model, then we can potentially include an argument for constructing pre- vs post-breeding census matrices
 
 rm(list=ls())
 
