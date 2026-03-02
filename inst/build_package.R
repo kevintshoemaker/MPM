@@ -4,6 +4,7 @@
 #
 # # install.packages(c("devtools", "roxygen2", "usethis", "testthat"))
 #
+# library(pak)
 # library(devtools)
 # library(roxygen2)
 # library(usethis)

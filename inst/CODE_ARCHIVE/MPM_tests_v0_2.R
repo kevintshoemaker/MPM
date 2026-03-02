@@ -1,7 +1,10 @@
 ## TESTING SCRIPT for source: MPM_Functions_v0_2.R
 #     This script runs tests and sanity checks for generic MPM functions
-
 rm(list=ls()); gc()    # clear workspace
+
+
+# pak::pak("kevintshoemaker/MPM")
+library(MPM)
 
 # Load functions ---------
 
