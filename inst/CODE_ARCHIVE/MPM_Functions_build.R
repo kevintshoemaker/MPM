@@ -1,19 +1,39 @@
 
-# FUNCTIONS for matrix population modeling in R ----------
+# Code for building R package --------
 
-# see MPM_tests script for notes on changes in each version
+# NOTES ---------
+
+# tested for up to 2 stages with variable stage duration
+# still assumes only one reproductive stage (adult) but this could be relaxed in the future
+# assumes pre-breeding census model. Therefore "fecundity" terms must always include survival of newborns to age 1.
+# we may implement post-breeding census model but I am reluctant because it will inevitably add confusion!
+# however, I think if we can design a way to input parameters that is clear in either model, then we can potentially include an argument for constructing pre- vs post-breeding census matrices
+
+# v0_1 implements "do_unroll" with a ramp in juvenile survival up to adulthood
+# the 'ramp' is implemented as a maximum entropy distribution that monotonically increases or decreases from a fixed minimum to a fixed maximum with a fixed mean survival during that duration
+# to implement the ramp, you must assign each stage a mean and a minimum survival value. The duration of the stage is set in the stage duration argument, and the maximum is fixed to be the minimum survival in the subsequent stage (to ensure continuity in survival across stages).
+
+# v0_2 reimagines "do_unroll" to allow the "ramp" to start at the previous survival rate OR with a specified minimum value.
+
 
 # Load packages -----------
 
-library(popbio)  # package for matrix population models
-library(Rsolnp)   # package for nonlinear constrained optimization (eg. for finding maxent probability distributions)
-library(memoise)   # package for retaining previously run results for efficiency (memoizing) 
+# install.packages(c("devtools", "roxygen2", "usethis", "testthat"))
+
+library(devtools)
+library(roxygen2)
+library(usethis)
+library(testthat)
+
+# library(popbio)  # package for matrix population models
+# library(Rsolnp)   # package for nonlinear constrained optimization (eg. for finding maxent probability distributions)
+# library(memoise)   # package for retaining previously run results for efficiency (memoizing)
 
 ## Initial error checking function ------------
 # fys {scalar, numeric} represents survival in the first year of life. First year (age 0) survival becomes part of fertility term for pre-breeding census model
 # js {data frame, numeric} contains information about juvenile survival rates in each juvenile stage starting at age 1 up until adulthood
-    # either a single column (no ramp) or two columns representing the mean survival across the whole stage and the minimum survival of the stage- we assume that the maximum is the minimum of the subsequent stage 
-# as {scalar, numeric} is adult survival (assumed to be a single stage) 
+    # either a single column (no ramp) or two columns representing the mean survival across the whole stage and the minimum survival of the stage- we assume that the maximum is the minimum of the subsequent stage
+# as {scalar, numeric} is adult survival (assumed to be a single stage)
 # f {scalar, numeric} is fecundity, or total female offspring produced per female at adulthood. NOTE: this is NOT adjusted for first year survival, since fys is now a separate parameter
 # t {data frame, numeric} is a data frame containing either a single column representing stage duration for each juvenile stage OR three columns representing the mean, min, and max stage duration (variable stage durations)
 
@@ -52,7 +72,7 @@ init_input_check <- function(fys,js,as,f,t){
 
 ## Scenario generating function -------------
 
-# ramp is T/F. If true, survival 'ramps up' annually, while maintaining the mean values specified  
+# ramp is T/F. If true, survival 'ramps up' annually, while maintaining the mean values specified
 
 gen_scen <- function(fysurv,jsurv,asurv,fec,dur,ramp){
   if(is.vector(dur)) dur = data.frame(dur=dur)
@@ -63,12 +83,12 @@ gen_scen <- function(fysurv,jsurv,asurv,fec,dur,ramp){
     }else{
       jsurv = data.frame(mean=jsurv)
     }
-  } 
+  }
   scen <- list()
   scen$fysurv = fysurv
-  scen$jsurv = jsurv 
-  scen$asurv = asurv 
-  scen$fec = fec  # annual fecundity (assume pre-breeding census- this represents the number of new one-year-olds entering the population next year)  
+  scen$jsurv = jsurv
+  scen$asurv = asurv
+  scen$fec = fec  # annual fecundity (assume pre-breeding census- this represents the number of new one-year-olds entering the population next year)
   scen$dur = dur  # duration of juvenile stage (mean, min, max)
   scen
 }
@@ -80,7 +100,7 @@ gen_scen <- function(fysurv,jsurv,asurv,fec,dur,ramp){
 #  t is duration of juvenile stage
 #  l is lambda, mat is a stage matrix...
 
-gamma_aas <- function(s,l,t){         
+gamma_aas <- function(s,l,t){
   sl = s/l
   if(sl==1) 0.5 else (sl^(t-1)*(1-sl)) / (1-sl^t)  # note that the formula involves the sum of finite geometric series so can be simplified
 }
@@ -100,7 +120,7 @@ do_aas <- function(fys,js,as,f,t){
   dif=Inf ; tol=1e-6
   while(dif>tol){
     l = popbio::lambda(m0)
-    for(g in 1:(n-1)) m0[g:(g+1),g] = thistrans_aas(ss[g],l,t[[1]][g]) 
+    for(g in 1:(n-1)) m0[g:(g+1),g] = thistrans_aas(ss[g],l,t[[1]][g])
     dif = abs(lambda(m0) - l)
   }
   if(ncol(t)>1) warning("this method is only valid for exact stage durations: variable stage durations not supported. Only first column of input 't' was used in this analysis")
@@ -132,12 +152,12 @@ negent = function(p){
 }
 
 ### Closure for generating equality constraint function- assume equality constraints are zeros a.la lagrange multiplier method
-# ages are the possible ages for this stage, 
-# mage is the point estimate for maturation, 
+# ages are the possible ages for this stage,
+# mage is the point estimate for maturation,
 # sd is the standard deviation from the mean,
 # skew is the skewness (third central moment, standardized by dividing by sigma cubed)
 generate_eq = function(ages, mage){
-  sig=(max(ages)-min(ages))/5  
+  sig=(max(ages)-min(ages))/5
   function(p){
     z1 = sum(p)-1       # constraint 1: sum to 1
     thismean = sum(p*ages)
@@ -150,7 +170,7 @@ generate_eq = function(ages, mage){
 # ages=1:10;mage=5.5    #;skew=0
 
 ineq = function(p){   # inequality constraint
-  diff(log(p),differences=2)   
+  diff(log(p),differences=2)
 }
 
 # sum(s$pars)
@@ -167,10 +187,10 @@ vari_dur <- function(meand, mind, maxd){
   p0 = dnorm(dur,meand,(maxd-mind)/4) ; p0= p0/sum(p0)
   bounds = cbind(rep(1e-9,length(dur)),rep(1-1e-9,length(dur)))
   eq = generate_eq(dur,meand)
-  s = solnp(pars=p0, fun = negent, 
+  s = solnp(pars=p0, fun = negent,
             eqfun = eq, eqB = c(0,0,0),
             ineqfun = ineq, ineqLB = rep(-1e9,length(dur)-2), ineqUB=rep(0,length(dur)-2),
-            LB=bounds[,1],UB=bounds[,2], control = list(trace=0))   # 
+            LB=bounds[,1],UB=bounds[,2], control = list(trace=0))   #
   data.frame(
     dur=dur,
     prob=s$pars
@@ -199,7 +219,7 @@ ramp_fun = function(sm,sa,sz,y,include_first=T,include_last=F){
   opt = optimize(opt_func,c(-10,10))
   thisk = opt$minimum
   (sa + (sz-sa) * ( (1-exp(-thisk * ( 1:y - 1 ) ) ) / (1 - exp(-thisk * (y - 1) ) ) ))[include]
-} 
+}
 
 plot(1:9,ramp_fun(0.8,0.5,0.9,10,include_first = T,include_last = F),type="l")
 
@@ -217,7 +237,7 @@ do_unroll <- function(fys,js,as,f,t){
   na = sum(t[[ncol(t)]])+1; ns = nrow(t)   # na is number of age classes, ns is number of juv stage classes
   m0 <- matrix(0,na,na) ;  m0[na,na] <- as    # construct init matrix
   stnames = paste0("st_", 0:(ns+1))   # kts added zero age/stage for completeness [but actually probably should take it out again to simplify]
-  survnames = paste0("surv_", 0:(ns+1))   
+  survnames = paste0("surv_", 0:(ns+1))
   fystage = stnames[1]
   adstage = stnames[ns+2]
   juvstages = setdiff(stnames,c(fystage,adstage))
@@ -226,14 +246,14 @@ do_unroll <- function(fys,js,as,f,t){
   )
   agedf[stnames] <- lapply(1:(ns+1), function(x) 0)  # add cols for fraction in stage by age
   agedf[survnames] <- lapply(1:(ns+1), function(x) 0)  # add cols for survival of each stage by age
-  agedf$st_0[1] = 1; agedf$st_1[2] = 1   # set all newborns in stage zero, and temporarily set all age 1 individuals in stage 1. 
+  agedf$st_0[1] = 1; agedf$st_1[2] = 1   # set all newborns in stage zero, and temporarily set all age 1 individuals in stage 1.
   agedf[[survnames[1]]] = fys     # set first and last survival rates
   agedf[[tail(survnames,1)]] = as
-  
+
   s=1
   for(s in 1:ns){
     thisst = juvstages[s]; thissurv=gsub("st_","surv_",thisst)
-    
+
     # fill in survival for juvenile stages
     if(ncol(js)>1){  # if survival ramp
       ss = c(fys,js$mean,as)   # put together all the survival rates for all stages
@@ -254,7 +274,7 @@ do_unroll <- function(fys,js,as,f,t){
       agedf[[thissurv]]=js$mean[s]
     }
   }  # end loop through stages
-    
+
     # fill in stage probabilities by age for juvenile stages
   if(ncol(t)>1){
     td = lapply(1:nrow(t),function(z) vari_dur(t[z,1],t[z,2],t[z,3] )   )  # variable ages at transition
@@ -268,15 +288,15 @@ do_unroll <- function(fys,js,as,f,t){
       }else{
         nonzero_ages = agedf$age[agedf[[thiscol]]>1e-15 ]
         a=2
-        for(a in 1:length(nonzero_ages)){  # loop through all ages of the prior stage and redistribute them 
+        for(a in 1:length(nonzero_ages)){  # loop through all ages of the prior stage and redistribute them
           thisa = nonzero_ages[a]
-          agedf[[nextcol]][agedf$age%in%(thisa+thistd$dur)] = agedf[[nextcol]][agedf$age%in%(thisa+thistd$dur)] + 
+          agedf[[nextcol]][agedf$age%in%(thisa+thistd$dur)] = agedf[[nextcol]][agedf$age%in%(thisa+thistd$dur)] +
             agedf[[thiscol]][agedf$age==thisa] * thistd$prob
         }
       }
     }# end loop through stages
     colSums(agedf[,stnames])   # make sure cols sum to 1...
-      
+
     stprob = agedf[,stnames]
     stprob$st_1[agedf$age>0] = 1  # start with everyone in first stage
     s=1
@@ -284,11 +304,11 @@ do_unroll <- function(fys,js,as,f,t){
       start = stprob[,s+1]   # all who did not transition to the next stage stay
       pstay = pmax(0,pmin(1,1-cumsum(agedf[,sprintf("st_%s",s+1)])))
       stprob[,s+1] = start * pstay   # need to be in stage currently AND stay in stage
-      stprob[,s+2] = start * (1 - pstay) 
+      stprob[,s+2] = start * (1 - pstay)
     }
     rowSums(stprob)   # make sure rows sum to 1
     agedf[,stnames] = stprob
-         
+
   }else{  # if no variable-age stages
     prev=2; s=1
     for(s in 1:ns){
@@ -297,10 +317,10 @@ do_unroll <- function(fys,js,as,f,t){
     }
     agedf[[adstage]][nrow(agedf)] = 1
   } # end if no variable-age stages
-  
+
   agedf$surv = rowSums( agedf[,survnames]*agedf[,stnames] )   # survival by age
-  agedf$f = agedf[,adstage] * f * fys   # check this- not sure this is right! Maybe only let adult stage have potential fertility
-    
+  agedf$f = agedf[,adstage] * f * fys
+
   m1 <- diag(agedf$surv[agedf$age%in%c(1:(na-1))])
   m0[2:na,1:(na-1)] = m1
   m0[1,] = agedf$f[-1]

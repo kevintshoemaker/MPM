@@ -1,0 +1,17 @@
+Package: MPM
+Title: Functions for constructing and testing matrix population models 
+Version: 0.0.0.9000
+Authors@R: 
+    person("Kevin", "Shoemaker", , "kevintshoemaker@gmail.com", role = c("aut", "cre"))
+Description: Functions for building and testing matrix population models in R. Supports variable stage durations and survival ramps across juvenile stages.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    popbio,
+    Rsolnp,
+    memoise
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

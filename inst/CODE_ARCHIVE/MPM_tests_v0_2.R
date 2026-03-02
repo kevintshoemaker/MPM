@@ -1,42 +1,23 @@
+## TESTING SCRIPT for source: MPM_Functions_v0_2.R
+#     This script runs tests and sanity checks for generic MPM functions
 
-# NOTES ---------
-
-# tested for up to 2 stages with variable stage duration
-# still assumes only one reproductive stage (adult) but this could be relaxed in the future
-# assumes pre-breeding census model. Therefore "fecundity" terms must always include survival of newborns to age 1. 
-# we may implement post-breeding census model but I am reluctant because it will inevitably add confusion!
-# however, I think if we can design a way to input parameters that is clear in either model, then we can potentially include an argument for constructing pre- vs post-breeding census matrices
-
-# v0_1 implements "do_unroll" with a ramp in juvenile survival up to adulthood
-    # the 'ramp' is implemented as a maximum entropy distribution that monotonically increases or decreases from a fixed minimum to a fixed maximum with a fixed mean survival during that duration
-    # to implement the ramp, you must assign each stage a mean and a minimum survival value. The duration of the stage is set in the stage duration argument, and the maximum is fixed to be the minimum survival in the subsequent stage (to ensure continuity in survival across stages). 
-
-# v0_2 reimagines "do_unroll" to allow the "ramp" to start at the previous survival rate OR with a specified minimum value. 
-
-#
 rm(list=ls()); gc()    # clear workspace
-
-# Load packages -----------
-
-require(popbio)  # package for matrix population models
-require(Rsolnp)   # package for nonlinear constrained optimization (eg. for finding maxent probability distributions)
-require(memoise)  # package for retaining previously run results for efficiency (memoizing) 
 
 # Load functions ---------
 
-source("MPM_Functions_v0_2.R")
+# source("MPM_Functions_v0_2.R")
 
 # Generate scenarios -------
 
-   # NOTE: the gen_scen() function helps package the data for the "do_MPM" functions (eg. "do_unroll"). 
+   # NOTE: the gen_scen() function helps package the data for the "do_MPM" functions (eg. "do_unroll").
 
 ## fixed stage duration, fixed survival per stage --------
 
 scen1 <- gen_scen(
   fysurv=0.45,
-  jsurv=0.75, 
-  asurv=0.96, 
-  fec=1.5, 
+  jsurv=0.75,
+  asurv=0.96,
+  fec=1.5,
   dur=9,
   ramp=F
 )
@@ -63,7 +44,7 @@ scen3 <- gen_scen(
     max=13
   ),
   ramp=F
-)  
+)
 
 scen4 <- gen_scen(
   fysurv=0.45,
@@ -76,7 +57,7 @@ scen4 <- gen_scen(
     max=c(5,5)
   ),
   ramp=F
-)   
+)
 
 ## survival ramp, fixed stage duration -------
 
@@ -85,9 +66,9 @@ scen5 <- gen_scen(
   jsurv=data.frame(
     mean=0.75,
     min=0.5
-  ), 
-  asurv=0.95, 
-  fec=2.29, 
+  ),
+  asurv=0.95,
+  fec=2.29,
   dur=9,
   ramp=T
 )
@@ -95,11 +76,11 @@ scen5 <- gen_scen(
 scen6 <- gen_scen(
   fysurv=0.45,
   jsurv=data.frame(
-    mean=c(0.5,0.8), 
+    mean=c(0.5,0.8),
     min=c(0.25,0.65)
-  ), 
-  asurv=0.95, 
-  fec=2.29, 
+  ),
+  asurv=0.95,
+  fec=2.29,
   dur=c(3,4),
   ramp=F
 )
@@ -112,8 +93,8 @@ scen7 <- gen_scen(
     mean=0.75,
     min=0.5
   ),
-  asurv=0.95, 
-  fec=2.29, 
+  asurv=0.95,
+  fec=2.29,
   dur=data.frame(
     dur=9,
     min=6,
@@ -125,32 +106,31 @@ scen7 <- gen_scen(
 scen8 <- gen_scen(
   fysurv=0.45,
   jsurv=data.frame(
-    mean=c(0.6,0.8), 
+    mean=c(0.6,0.8),
     min=c(0.3,0.6)
-  ), 
-  asurv=0.95, 
-  fec=2.29, 
+  ),
+  asurv=0.95,
+  fec=2.29,
   dur=data.frame(
     dur=c(3,5),
     min=c(1,3),
-    max=c(3,8) 
+    max=c(3,8)
   ),
   ramp=F
 )
 
 scen9 <- gen_scen(    # if no min value specified for stage, assume the ramp starts at the previous value.
   fysurv=0.45,
-  jsurv=c(0.6,0.8), 
-  asurv=0.95, 
-  fec=2.29, 
+  jsurv=c(0.6,0.8),
+  asurv=0.95,
+  fec=2.29,
   dur=data.frame(
     dur=c(3,5),
     min=c(1,3),
-    max=c(3,8) 
+    max=c(3,8)
   ),
   ramp=T
 )
-
 
 
 # Run MPM tests --------
@@ -171,7 +151,7 @@ lambda(mat)       # gives the same result as AAS- as it should!
 
 mat <- do_fas(scen1$fysurv,scen1$jsurv,scen1$asurv,scen1$fec,scen1$dur)  # FAS
 mat
-lambda(mat)  # 1.065  --- 6.5% growth rate per year   - much higher growth rate!!!  
+lambda(mat)  # 1.065  --- 6.5% growth rate per year   - much higher growth rate!!!
 
 ## Two pre-maturation stages ----------
 
@@ -187,7 +167,7 @@ lambda(mat)       # gives the same result as AAS- as it should!
 
 mat <- do_fas(scen2$fysurv,scen2$jsurv,scen2$asurv,scen2$fec,scen2$dur)  # FAS
 mat
-lambda(mat)  # still higher- but not quite as wrong  
+lambda(mat)  # still higher- but not quite as wrong
 
 
 ## variable juvenile stage duration, single stage ---------
@@ -196,57 +176,57 @@ lambda(mat)  # still higher- but not quite as wrong
 fys=scen3$fysurv; js=scen3$jsurv; as=scen3$asurv; f=scen3$fec; t=scen3$dur
 mat <- do_aas(scen3$fysurv,scen3$jsurv,scen3$asurv,scen3$fec,scen3$dur)   # aas- gives warning message (assumes fixed duration)
 mat
-lambda(mat) 
+lambda(mat)
 
 mat <- do_unroll(scen3$fysurv,scen3$jsurv,scen3$asurv,scen3$fec,scen3$dur)   # very minor difference from fixed duration
 mat
-lambda(mat) 
+lambda(mat)
 
 
 ## multiple variable juvenile stages -----
 
 # scen4
 fys=scen4$fysurv; js=scen4$jsurv;as=scen4$asurv;f=scen4$fec;t=scen4$dur
-mat <- do_unroll(scen4$fysurv,scen4$jsurv,scen4$asurv,scen4$fec,scen4$dur)   
+mat <- do_unroll(scen4$fysurv,scen4$jsurv,scen4$asurv,scen4$fec,scen4$dur)
 mat
-lambda(mat) 
+lambda(mat)
 
 
 ## ramp with fixed stage duration- one stage -----
 
 # scen5
 fys=scen5$fysurv; js=scen5$jsurv;as=scen5$asurv;f=scen5$fec;t=scen5$dur
-mat <- do_unroll(scen5$fysurv,scen5$jsurv,scen5$asurv,scen5$fec,scen5$dur)  
+mat <- do_unroll(scen5$fysurv,scen5$jsurv,scen5$asurv,scen5$fec,scen5$dur)
 mat
-lambda(mat) 
+lambda(mat)
 
 ## ramp with fixed stage duration- two stage -----
 
 fys=scen6$fysurv; js=scen6$jsurv;as=scen6$asurv;f=scen6$fec;t=scen6$dur
-mat <- do_unroll(scen6$fysurv,scen6$jsurv,scen6$asurv,scen6$fec,scen6$dur)   
+mat <- do_unroll(scen6$fysurv,scen6$jsurv,scen6$asurv,scen6$fec,scen6$dur)
 mat
-lambda(mat) 
+lambda(mat)
 
 ## ramp with variable stage duration- one stage -----
 
 fys=scen7$fysurv; js=scen7$jsurv; as=scen7$asurv; f=scen7$fec; t=scen7$dur
-mat <- do_unroll(scen7$fysurv,scen7$jsurv,scen7$asurv,scen7$fec,scen7$dur)   
+mat <- do_unroll(scen7$fysurv,scen7$jsurv,scen7$asurv,scen7$fec,scen7$dur)
 mat
-lambda(mat) 
+lambda(mat)
 
 ## ramp with variable stage duration- two stage -----
 
 fys=scen8$fysurv; js=scen8$jsurv; as=scen8$asurv; f=scen8$fec; t=scen8$dur
-mat <- do_unroll(scen8$fysurv,scen8$jsurv,scen8$asurv,scen8$fec,scen8$dur)   
+mat <- do_unroll(scen8$fysurv,scen8$jsurv,scen8$asurv,scen8$fec,scen8$dur)
 mat
-lambda(mat) 
+lambda(mat)
 
 ## ramp with variable stage duration- two stage, ramp starts on previous -----
 
 fys=scen9$fysurv; js=scen9$jsurv; as=scen9$asurv; f=scen9$fec; t=scen9$dur
-mat <- do_unroll(scen9$fysurv,scen9$jsurv,scen9$asurv,scen9$fec,scen9$dur)   
+mat <- do_unroll(scen9$fysurv,scen9$jsurv,scen9$asurv,scen9$fec,scen9$dur)
 mat
-lambda(mat) 
+lambda(mat)
 
 # END SCRIPT -------
 
@@ -267,7 +247,7 @@ lambda(mat)
 ## Compare with Kendall's package...
 ## library(mpmtools)
 
-# install.packages("devtools")    # code to install package from github from lead author of Kendall et al paper. 
+# install.packages("devtools")    # code to install package from github from lead author of Kendall et al paper.
 # devtools::install_github("BruceKendall/mpmtools")
 
 # check result against kendall's package
