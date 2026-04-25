@@ -13,10 +13,15 @@ gen_scen(fysurv, jsurv, asurv, fec, dur, ramp)
 per stage) or a data frame with columns \code{mean} and optionally \code{min} when
 a survival ramp is desired.}
 
-\item{asurv}{Numeric scalar. Adult survival probability.}
+\item{asurv}{Either a numeric scalar (adult survival probability) or a data
+frame with columns \code{mean},\code{old_age} (age when senescence begins), and
+\code{max_age} (maximum age attainable by this species). The current model
+assumes that survival declines linearly to 0 beginning at the 'old_age'
+threshold.}
 
 \item{fec}{Numeric scalar. Annual fecundity (female offspring per adult
-female per year, excluding first-year survival).}
+female per year, excluding first-year survival). This function currently
+assumes that the final (adult) stage is the only reproductive stage.}
 
 \item{dur}{Either a numeric vector of stage durations (one per juvenile
 stage) or a data frame with columns \code{dur}, \code{min}, and \code{max} for variable

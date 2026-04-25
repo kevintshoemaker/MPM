@@ -57,8 +57,19 @@
 #' @export
 do_unroll <- function(fys,js,as,f,t){
   init_input_check(fys,js,as,f,t)
-  na = sum(t[[ncol(t)]])+1; ns = nrow(t)   # na is number of age classes, ns is number of juv stage classes
-  m0 <- matrix(0,na,na) ;  m0[na,na] <- as    # construct init matrix
+  na = ifelse(ncol(as)>1, as$max_age, sum(t[[ncol(t)]])+1 )   # na is number of age classes,
+  adult_yrs = (sum(t[[ncol(t)]])+1):na
+  ns = nrow(t)    # ns is number of juv stage classes
+  m0 <- matrix(0,na,na) # construct init matrix
+  aramp = rep(as$mean,length(adult_yrs))
+  if(ncol(as)>1){
+     aramp[match(as$old_age:as$max_age,adult_yrs)] = seq(as$mean,0,length=length(as$old_age:as$max_age))
+     # m0[adult_yrs[-1],adult_yrs[-length(adult_yrs)]] = diag(aramp[-length(aramp)])
+     m0[as$max_age,as$max_age] = 0
+  }else{
+     m0[na,na] <- as$mean
+  }
+
   stnames = paste0("st_", 0:(ns+1))   # kts added zero age/stage for completeness [but actually probably should take it out again to simplify]
   survnames = paste0("surv_", 0:(ns+1))
   fystage = stnames[1]
@@ -71,7 +82,8 @@ do_unroll <- function(fys,js,as,f,t){
   agedf[survnames] <- lapply(1:(ns+1), function(x) 0)  # add cols for survival of each stage by age
   agedf$st_0[1] = 1; agedf$st_1[2] = 1   # set all newborns in stage zero, and temporarily set all age 1 individuals in stage 1.
   agedf[[survnames[1]]] = fys     # set first and last survival rates
-  agedf[[tail(survnames,1)]] = as
+  agedf[[tail(survnames,1)]] = as$mean
+  agedf[[tail(survnames,1)]][match(adult_yrs,agedf$age)] = aramp
 
   s=1
   for(s in 1:ns){
@@ -79,7 +91,7 @@ do_unroll <- function(fys,js,as,f,t){
 
     # fill in survival for juvenile stages
     if(ncol(js)>1){  # if survival ramp
-      ss = c(fys,js$mean,as)   # put together all the survival rates for all stages
+      ss = c(fys,js$mean,as$mean)   # put together all the survival rates for all stages
       names(ss) = stnames
       startage = ifelse(s==1,1,cumsum(t$dur[1:s])+1)
       theseages = startage:(startage+t$dur[s]-1)
@@ -138,7 +150,7 @@ do_unroll <- function(fys,js,as,f,t){
       agedf[prev:(prev+t$dur[s]-1),juvstages[s]] = 1
       prev=prev+t$dur[s]
     }
-    agedf[[adstage]][nrow(agedf)] = 1
+    agedf[[adstage]][match(adult_yrs,agedf$age)] = 1
   } # end if no variable-age stages
 
   agedf$surv = rowSums( agedf[,survnames]*agedf[,stnames] )   # survival by age

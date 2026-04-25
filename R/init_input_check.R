@@ -8,7 +8,10 @@
 #' @param js Data frame of juvenile survival rates, one row per juvenile
 #'   stage. Either one column (`mean`) for constant survival, or two columns
 #'   (`mean`, `min`) when a survival ramp is requested.
-#' @param as Numeric scalar. Adult (final-stage) survival rate.
+#' @param as Data frame of adult survival rates (only one row- final stage).
+#'   Either one column (`mean`) or two columns
+#'   (`mean`, `old_age`, `max_age`), with the latter two parameters for
+#'   specifying senescence
 #' @param f Numeric scalar. Annual fecundity — female offspring produced per
 #'   adult female per year. Does **not** include first-year survival adjustment
 #'   (that is handled via `fys`).
@@ -31,12 +34,15 @@ init_input_check <- function(fys,js,as,f,t){
   if (!all(sapply(js,is.numeric))){
     stop("All columns of data frame 'js' must be numeric")
   }
-  if (length(as)>1) {
-    stop("adult survival must be a single value")
+  if (!is.data.frame(as)) {
+    stop("Argument 'as' (adult surv) must be data frame")
   }
-  if (!is.numeric(as)){
-    stop("adult survival must be numeric")
-  }
+  # if (length(as)>1) {
+  #   stop("adult survival must be a single value")
+  # }
+  # if (!is.numeric(as)){
+  #   stop("adult survival must be numeric")
+  # }
   if (length(f)>1) {
     stop("fecundity must be a single value")
   }

@@ -14,7 +14,10 @@ In a pre-breeding census model this is folded into the fertility term.}
 stage. Either one column (\code{mean}) for constant survival, or two columns
 (\code{mean}, \code{min}) when a survival ramp is requested.}
 
-\item{as}{Numeric scalar. Adult (final-stage) survival rate.}
+\item{as}{Data frame of adult survival rates (only one row- final stage).
+Either one column (\code{mean}) or two columns
+(\code{mean}, \code{old_age}, \code{max_age}), with the latter two parameters for
+specifying senescence}
 
 \item{f}{Numeric scalar. Annual fecundity — female offspring produced per
 adult female per year. Does \strong{not} include first-year survival adjustment

@@ -7,9 +7,14 @@
 #' @param jsurv Either a numeric vector of mean juvenile survival rates (one
 #'   per stage) or a data frame with columns `mean` and optionally `min` when
 #'   a survival ramp is desired.
-#' @param asurv Numeric scalar. Adult survival probability.
+#' @param asurv Either a numeric scalar (adult survival probability) or a data
+#'   frame with columns `mean`,`old_age` (age when senescence begins), and
+#'   `max_age` (maximum age attainable by this species). The current model
+#'   assumes that survival declines linearly to 0 beginning at the 'old_age'
+#'   threshold.
 #' @param fec Numeric scalar. Annual fecundity (female offspring per adult
-#'   female per year, excluding first-year survival).
+#'   female per year, excluding first-year survival). This function currently
+#'   assumes that the final (adult) stage is the only reproductive stage.
 #' @param dur Either a numeric vector of stage durations (one per juvenile
 #'   stage) or a data frame with columns `dur`, `min`, and `max` for variable
 #'   stage durations and number of rows equal to the number of stages.
@@ -45,8 +50,9 @@
 #' @export
 
 gen_scen <- function(fysurv,jsurv,asurv,fec,dur,ramp){
+  if(is.vector(asurv)) asurv = data.frame(mean=asurv)
   if(is.vector(dur)) dur = data.frame(dur=dur)
-  nst = length(jsurv) + 1
+  # nst = length(jsurv) + 1
   if(is.vector(jsurv)){
     if(ramp){
       jsurv = data.frame(mean=jsurv,min=as.numeric(NA))   # the NA means that the ramp by default starts at the previous max value

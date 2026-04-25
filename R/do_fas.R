@@ -30,7 +30,7 @@
 #' @export
 do_fas <- function(fys,js,as,f,t){
   init_input_check(fys,js,as,f,t)
-  ss = c(js[[1]],as)
+  ss = c(js[[1]],as$mean)
   n=length(ss); m0 <- matrix(0,n,n) ; m0[n,n] <- ss[n] ;  m0[1,n] <- f*fys    # construct init matrix
   gam <- 1/t[[1]]    # fraction of stage that is in the transition age
   for(g in 1:(n-1)) m0[g:(g+1),g] <- c(ss[g]*(1-gam[g]), ss[g]*gam[g] )

@@ -71,7 +71,7 @@ thistrans_aas <- function(s,l,t){
 #' @export
 do_aas <- function(fys,js,as,f,t){
   init_input_check(fys,js,as,f,t)
-  ss = c(js[[1]],as)   # join juv and adult survival rates
+  ss = c(js[[1]],as$mean)   # join juv and adult survival rates
   n=length(ss); m0 <- matrix(0,n,n) ; m0[n,n] <- ss[n] ;  m0[1,n] <- f*fys    # construct init matrix
   lam = 1  # take an initial guess at lambda
   dif=Inf ; tol=1e-6
