@@ -111,13 +111,11 @@ scen10 <- gen_scen(
   ramp=F
 )
 
-   ### PROBLEM HERE- TEST THIS!
-
-fys = scen10$fysurv
-js = scen10$jsurv
-as = scen10$asurv
-f = scen10$fec
-t = scen10$dur
+# fys = scen10$fysurv
+# js = scen10$jsurv
+# as = scen10$asurv
+# f = scen10$fec
+# t = scen10$dur
 m3=do_unroll(scen10$fysurv,scen10$jsurv,scen10$asurv,scen10$fec,scen10$dur)
 popbio::lambda(m3)
 
