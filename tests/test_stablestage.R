@@ -90,11 +90,11 @@ nosenescence = gen_scen(
 )
 
 # ?do_unroll
-fys = senescence$fysurv
-js = senescence$jsurv
-as = senescence$asurv
-f = senescence$fec
-t = senescence$dur
+# fys = senescence$fysurv
+# js = senescence$jsurv
+# as = senescence$asurv
+# f = senescence$fec
+# t = senescence$dur
 
 m=do_unroll(senescence$fysurv,senescence$jsurv,senescence$asurv,senescence$fec,senescence$dur)
 popbio::lambda(m)
@@ -107,15 +107,16 @@ scen10 <- gen_scen(
   jsurv=0.75,
   asurv=data.frame(mean=0.96,old_age=80,max_age=100),
   fec=1.5,
-  dur=9,
+  dur=9.4,
   ramp=F
 )
 
-# fys = scen10$fysurv
-# js = scen10$jsurv
-# as = scen10$asurv
-# f = scen10$fec
-# t = scen10$dur
+fys = scen10$fysurv
+js = scen10$jsurv
+as = scen10$asurv
+f = scen10$fec
+t = scen10$dur
+
 m3=do_unroll(scen10$fysurv,scen10$jsurv,scen10$asurv,scen10$fec,scen10$dur)
 popbio::lambda(m3)
 
@@ -163,5 +164,21 @@ scenx2 <- gen_scen(
 mx2=do_unroll(scenx2$fysurv,scenx2$jsurv,scenx2$asurv,scenx2$fec,scenx2$dur)
 lambda(mx2)
 lambda(mx1)
+
+
+
+scenx2 <- gen_scen(
+  fysurv=0.45,
+  jsurv=0.75,
+  asurv=data.frame(mean=0.96,old_age=80,max_age=100),
+  fec=2.0,
+  dur=data.frame(dur=9.5,min=8,max=11),
+  ramp=F
+)
+mx2=do_unroll(scenx2$fysurv,scenx2$jsurv,scenx2$asurv,scenx2$fec,scenx2$dur)
+mx3=do_aas(scenx2$fysurv,scenx2$jsurv,scenx2$asurv,scenx2$fec,scenx2$dur)
+
+lambda(mx2)
+lambda(mx3)
 
 

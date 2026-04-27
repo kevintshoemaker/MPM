@@ -57,8 +57,11 @@
 #' @export
 do_unroll <- function(fys,js,as,f,t){
   init_input_check(fys,js,as,f,t)
+  if(ncol(t)==1 & t$dur%%1!=0){     # accommodate non-integer stage durations...
+    t = data.frame(dur=t$dur,min=floor(t$dur),max=ceiling(t$dur))
+  }
   na = ifelse(ncol(as)>1, as$max_age, sum(t[[ncol(t)]])+1 )   # na is number of age classes,
-  adult_yrs = (sum(t[[ncol(t)]])+1):na
+  adult_yrs = (sum(t[[ncol(t)]])+1):na   # for "unrolling" the adult stage
   ns = nrow(t)    # ns is number of juv stage classes
   m0 <- matrix(0,na,na) # construct init matrix
   aramp = rep(as$mean,length(adult_yrs))
@@ -147,8 +150,8 @@ do_unroll <- function(fys,js,as,f,t){
   }else{  # if no variable-age stages
     prev=2; s=1
     for(s in 1:ns){
-      agedf[prev:(prev+t$dur[s]-1),juvstages[s]] = 1
-      prev=prev+t$dur[s]
+      agedf[prev:(prev+round(t$dur[s])-1),juvstages[s]] = 1
+      prev=prev+round(t$dur[s])
     }
     agedf[[adstage]][match(adult_yrs,agedf$age)] = 1
   } # end if no variable-age stages

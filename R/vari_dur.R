@@ -69,17 +69,25 @@ ineq <- function(p) {
 #' @export
 vari_dur <- function(meand, mind, maxd){
   dur <- floor(mind):ceiling(maxd)
-  p0 = dnorm(dur,meand,(maxd-mind)/4) ; p0= p0/sum(p0)
-  bounds = cbind(rep(1e-9,length(dur)),rep(1-1e-9,length(dur)))
-  eq = generate_eq(dur,meand)
-  s = Rsolnp::solnp(pars=p0, fun = negent,
-            eqfun = eq, eqB = c(0,0,0),
-            ineqfun = ineq, ineqLB = rep(-1e9,length(dur)-2), ineqUB=rep(0,length(dur)-2),
-            LB=bounds[,1],UB=bounds[,2], control = list(trace=0))   #
-  data.frame(
-    dur=dur,
-    prob=s$pars
-    # cprob=pmax(0,pmin(1,c(s$pars[1], s$pars[2:length(dur)] / (1-cumsum(s$pars))[1:(length(dur)-1)]) ))
-  )
+  if(length(dur)>2){
+    p0 = dnorm(dur,meand,(maxd-mind)/4) ; p0= p0/sum(p0)
+    bounds = cbind(rep(1e-9,length(dur)),rep(1-1e-9,length(dur)))
+    eq = generate_eq(dur,meand)
+    s = Rsolnp::solnp(pars=p0, fun = negent,
+                      eqfun = eq, eqB = c(0,0,0),
+                      ineqfun = ineq, ineqLB = rep(-1e9,length(dur)-2), ineqUB=rep(0,length(dur)-2),
+                      LB=bounds[,1],UB=bounds[,2], control = list(trace=0))   #
+    ret = data.frame(
+      dur=dur,
+      prob=s$pars
+      # cprob=pmax(0,pmin(1,c(s$pars[1], s$pars[2:length(dur)] / (1-cumsum(s$pars))[1:(length(dur)-1)]) ))
+    )
+  }else{   # if only two stages
+    ret = data.frame(
+      dur=dur,
+      prob=c((1-meand%%1),meand%%1)
+    )
+  }
+  return(ret)
 }
 vari_dur = memoise::memoize(vari_dur)
