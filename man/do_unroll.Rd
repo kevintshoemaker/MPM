@@ -25,8 +25,7 @@ adult female per year. Does \strong{not} include first-year survival adjustment
 
 \item{t}{Data frame of stage durations, one row per juvenile stage. Either
 one column (\code{dur}) for fixed duration, or three columns (\code{dur}, \code{min},
-\code{max}) for variable durations. If non-integer values are supplied the user
-inputs are coerced to integer values.}
+\code{max}) for variable durations.}
 }
 \value{
 A square numeric age-based matrix of dimension
